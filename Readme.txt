@@ -12,3 +12,6 @@ SDA              A4
 SCL              A5
 4) It should fire up and run at this point. 
 
+* Where to get the DS1307 (dev board): https://www.adafruit.com/products/264?gclid=CLzs34znpcwCFQepaQodRIsEtg
+
+
