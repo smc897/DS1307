@@ -7,9 +7,9 @@
     digitalWrite(SDA,1);
     digitalWrite(SCL,1);
     TWBR=0x80;
-    tmp=getReg(0);
-    tmp&=~0x80;
-    setReg(0,tmp);
+    int inittmp=getReg(0);
+    inittmp&=~0x80;
+    setReg(0,inittmp);
     }
 
     //this sets the seconds register
@@ -18,15 +18,15 @@
       if(s>59)error(1);
       int sectens=s/10;
       int secones=s-10*sectens;
-      tmp=(sectens<<4)+secones;
-      setReg(0,tmp);
+      int sectmp=(sectens<<4)+secones;
+      setReg(0,sectmp);
       }
 
      //this gets the seconds register
      int DS1307::getSeconds(){
-      tmp=getReg(0);
-      int sectens=tmp>>4;
-      int secones=tmp&0x0F;
+      int sectmp=getReg(0);
+      int sectens=sectmp>>4;
+      int secones=sectmp&0x0F;
       int seconds=10*sectens+secones;
       return seconds;
       }
@@ -37,57 +37,78 @@
       if(m>59)error(1);
       int mintens=m/10;
       int minones=m-10*mintens;
-      tmp=(mintens<<4)+minones;
-      setReg(1,tmp);
+      int mintmp=(mintens<<4)+minones;
+      setReg(1,mintmp);
       }
 
      //this gets the minute register
      int DS1307::getMinutes(){
-      tmp=getReg(1);
-      int mintens=tmp>>4;
-      int minones=tmp&0x0F;
+      int minutetmp=getReg(1);
+      int mintens=minutetmp>>4;
+      int minones=minutetmp&0x0F;
       int minutes=10*mintens+minones;
       return minutes;
       }
 
         //this function sets or clears military time mode
   void DS1307::setMilitary(boolean mil){
-    military=mil;
+    //military=mil;
+    int tmpmil;
     if(mil){
       //clear military bit
-      tmp=getReg(2);
-      tmp&=~0x40;
-      setReg(2,tmp);
+      tmpmil=getReg(2);
+      tmpmil&=~0x40;
+      setReg(2,tmpmil);
       }
       else{
         //set military bit
-        tmp=getReg(2);
-        tmp|=0x40;
-        setReg(2,tmp);
+       // Serial.println("in 12 hour mode");
+        tmpmil=getReg(2);
+        tmpmil|=0x40;
+        setReg(2,tmpmil);
         }
+        
     }
 
-    //this sets the hours, knowing ampm and military time bits
+    //this sets the hours
     void DS1307::setHours(int hr){ //fix hours setting
-       
         int hrTens=hr/10;
         int hrOnes=hr-10*hrTens;
-        tmp=hrOnes+(hrTens<<4);
+        int tmphr=hrOnes+(hrTens<<4);
 
-        if(military){
+        char tmp1=getReg(2);
+        if((tmp1&0x40)==0){ //military
+     //   Serial.println("in military mode");
           if(hr<0 || hr>23){
             Serial.println("hour out of range.");
             while(1){}
             }
-          tmp&=~0x40; //clear military time bit
           }
           else {
-            if(hr<0 || hr>23){
+              
+                  //set military time bit
+            tmphr|=0x40;
+            
+            if(hr<0 || hr>12){
               Serial.println("hour out of range.");
               while(1){}
               }
-            tmp+=(ampm<<6);}
-          setReg(2,tmp);
+              
+              if((tmp1&0x20)>0) {
+              //    Serial.println("setting AMPM to PM, tmp1 is: ");
+              //    Serial.println(tmp1,HEX);
+                  tmphr|=0x20;
+              }
+              else {
+                 //      Serial.println("setting AMPM to AM, tmp1 is: ");
+                 // Serial.println(tmp1,HEX);
+                  tmphr&=~0x20;
+              }
+            }
+   
+    //      Serial.print("tmphr: ");
+    //      Serial.println(tmphr,HEX);
+          setReg(2,tmphr);
       }
 
       //this sets the day
@@ -103,93 +124,95 @@
        void DS1307::setDate(int date){
         int dateTens=date/10;
         int dateOnes=date-10*dateTens;
-        tmp=(dateTens<<4)+dateOnes;
-        setReg(4,tmp);
+        int daytmp=(dateTens<<4)+dateOnes;
+        setReg(4,daytmp);
         }
 
         //set the month
          void DS1307::setMonth(int month){
             int monthTens=month/10;
         int monthOnes=month-10*monthTens;
-        tmp=(monthTens<<4)+monthOnes;
-        setReg(5,tmp);
+        int monthtmp=(monthTens<<4)+monthOnes;
+        setReg(5,monthtmp);
           }
 
           //set the year
          void DS1307::setYear(int yr){
             int yearTens=yr/10;
         int yearOnes=yr-10*yearTens;
-        tmp=(yearTens<<4)+yearOnes;
-        setReg(6,tmp);
+        int yrtmp=(yearTens<<4)+yearOnes;
+        setReg(6,yrtmp);
           }
 
          //get the year
          int DS1307::getYear(){
-          tmp=getReg(6);
-          int yearTens=tmp>>4;
-          int yearOnes=tmp&0x0F;
+          int yrtmp=getReg(6);
+          int yearTens=yrtmp>>4;
+          int yearOnes=yrtmp&0x0F;
           return 10*yearTens+yearOnes;
           }
 
           //get the month
           int DS1307::getMonth(){
-          tmp=getReg(5);
-          int monthTens=(tmp&0x10)>>4;
-          int monthOnes=(tmp&0x0F);
+          int monthtmp=getReg(5);
+          int monthTens=(monthtmp&0x10)>>4;
+          int monthOnes=(monthtmp&0x0F);
           return 10*monthTens+monthOnes;
           }
 
           //get the date
             int DS1307::getDate(){
-          tmp=getReg(4);
-          int dateTens=(tmp&0x30)>>4;
-          int dateOnes=(tmp&0x0F);
+          int datetmp=getReg(4);
+          int dateTens=(datetmp&0x30)>>4;
+          int dateOnes=(datetmp&0x0F);
           return 10*dateTens+dateOnes;
           }
 
           //get day
           int DS1307::getDay(){
-            tmp=getReg(3);
-            return tmp;
+            int daytmp=getReg(3);
+            return daytmp;
             }
 
             //get hours
             int DS1307::getHours(){
-              tmp=getReg(2);
+              char tmphr=getReg(2);
+              
+        //      Serial.print("in get hours, tmp is: ");
+        //      Serial.println(tmp,HEX);
               int hrTens,hrOnes;
-              if(tmp&0x40==0x40){
+              if((tmphr&0x40)==0x40){
                 //12 hour
-                military=false;
-                ampm=(tmp&0x20)>>6;
-
-                tmp&=~0x60; //clear tmp ampm and 12/24 hr stuff
-                hrTens=(tmp&0x10)>>4;
-                hrOnes=(tmp&0x0F);
+             
+                hrTens=(tmphr&0x10)>>4;
+                hrOnes=(tmphr&0x0F);
                 return hrTens*10+hrOnes;
                 }
                 else{
                   //24 hour
-                  military=true;
-                  tmp&=~0x40;
-                      hrTens=(tmp&0x30)>>4;
-                hrOnes=(tmp&0x0F);
+                //  military=true;
+                  tmphr&=~0x40;
+                      hrTens=(tmphr&0x30)>>4;
+                hrOnes=(tmphr&0x0F);
                 return hrTens*10+hrOnes;
                   }
               }
 
               //this gets the ampm status
               String DS1307::getAMPM(){
-                tmp=getReg(2);
-                if(tmp&0x20==0x20)
+                char tmpampm=getReg(2);
+                if((tmpampm&0x20)>0)
                 return "PM";
                 else return "AM";
                 }
 
                 //this sets the AMPM status
                 void DS1307::setAMPM(boolean ampm){
-                  tmp=getReg(2);
-                  if(ampm) tmp|=0x20;
-                  else tmp&=~0x20;
+                  int tmpampm=getReg(2);
+                  if(ampm) tmpampm|=0x20;
+                  else tmpampm&=~0x20;
+          
+                  setReg(2,tmpampm);
                   }
         
 
@@ -275,12 +298,12 @@ error(TWSR&0xF8);
 TWCR=(1<<TWINT)|(1<<TWEN);
 while(!(TWCR&(1<<TWINT))){}
 
-tmp=TWDR;
+int i2ctmp=TWDR;
 
 //send stop
 TWCR=(1<<TWINT)|(1<<TWSTO)|(1<<TWEN);
 
-return tmp;
+return i2ctmp;
   }
 
   //this is an error function

@@ -11,7 +11,7 @@ class DS1307{
 
 private:
 int tmp;
-boolean military,ampm;
+//boolean military,ampm;
 
 //function declarations
 public:
